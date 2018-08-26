@@ -129,7 +129,7 @@ class Digital extends Goods
     //закупочная цена
     function primary_sum()
     {
-        return self::getCounts() * $this->$this->purchising_price . '<br>';
+        return self::getCounts() * $this->purchising_price . '<br>';
     }
 
 }
@@ -152,7 +152,7 @@ class Piece_goods extends Goods
         $this->counts = $counts;
     }
     //цена в зависимости от веса
-    function summ()
+    public function summ()
     {
         return self::getCounts() * self::cost . '<br>';
     }
@@ -197,22 +197,36 @@ class Weight_product extends Goods
 
 }
 //доход,грубо
-class Net_profit
+class Net_profit extends Goods
 {
-    private $sum1;
-    private $sum2;
     public $sum = 0;
+    use Singleton;
 
-    function __construct($sum1, $sum2)
+}
+//не знаю есть ли смысл в использования этого в таком ключе
+trait Singleton{
+    protected static $summ;
+    protected static $summ2;
+
+    protected function __construct()
     {
-        $this->sum1 = $sum1;
-        $this->sum2 = $sum2;
-        $this->sum = $sum = self::profit();
+        static::setInstance_1($this);
+        static::setInstance_2($this);
     }
-
-    private function profit()
-    {
-        return $this->sum1 - $this->sum2;
+    final public static function setInstance_1($summ){
+        return static::$summ=$summ;
+    }
+    final public static function setInstance_2($summ2){
+        return static::$summ2=$summ2;
+    }
+    final public static function getInstance_1(){
+        return isset(static::$summ)? static::$summ : static::$summ= new static;
+    }
+    final public static function getInstance_2(){
+        return isset(static::$summ2)? static::$summ2 : static::$summ2= new static;
+    }
+     public static function finalSum(){
+        return static::getInstance_1() - static::getInstance_2();
     }
 
 }
@@ -224,28 +238,39 @@ $try->setType('Music');
 $try->setCounts(2);
 $try_cost = new Digital();
 $try_cost->setCounts($try->getCounts()); // как автоматизировать этот моменти уже в классе, подскажите.
-echo $try->describe() . '| Cost: ' . $try_cost->summ() . '<br>';    //оказалось, что не очен удачно организована структура у меня. т.к если я выношу <html> теги туда, то не будут считаться данные так как смешиваются численные и текстовые переменные.
-//как можно организовать это все короче и более структурированно? не
+echo $try->describe() . '| Cost: ' . $try_cost->summ() . '| Purchasing price: ' . $try_cost->primary_sum();    //оказалось, что не очен удачно организована структура у меня. т.к если я выношу <html> теги туда, то не будут считаться данные так как смешиваются численные и текстовые переменные.
+//как можно организовать это все короче и более структурированно?
+$tryCost = Net_profit::setInstance_1($try_cost->summ());
+$tryCost = Net_profit::setInstance_2($try_cost->primary_sum());
+$tryCost=Net_profit::finalSum();
+
+echo ' | Profit: ' .@$tryCost. '<br>';
 
 //Товар на вес
 $next = new Goods();
 $next->setItem('Gala', 'Apples', 50);
 $nextSum = new Weight_product();
 $nextSum->setCounts($next->getCounts());
-echo $next->describe() . '| Cost: ' . $nextSum->weight() . '<br>' . '| Purchasing price: ' . $nextSum->primary_sum();
+echo  '<br>'.$next->describe() . '| Cost: ' . $nextSum->weight() . '<br>' . '| Purchasing price: ' . $nextSum->primary_sum();
 //грубо доход
-$profit = new Net_profit($nextSum->weight(), $nextSum->primary_sum());
-echo '<br>' . ' | Profit: ' . $profit->sum . '<br>';
+
+$profit = Net_profit::setInstance_1($nextSum->weight());
+$profit = Net_profit::setInstance_2($nextSum->primary_sum());
+$profit=Net_profit::finalSum();
+echo '<br>' . ' | Profit: ' .@$profit. '<br>';
 
 //Штукчный товар.
 $pieces = new Goods();
 $pieces->setItem('Pepsi', 'Beverage', 1);
 $buyPieces = new Piece_goods();
-$buyPieces->setCounts($next->getCounts());
-echo '<br>' . $pieces->describe() . '| Cost: ' . $nextSum->weight() . '<br>' . '| Purchasing price: ' . $nextSum->primary_sum();
+$buyPieces->setCounts($pieces->getCounts());
+echo '<br>' . $pieces->describe() . '| Cost: ' . $buyPieces->summ()  . '| Purchasing price: ' . $buyPieces->primary_sum();
 //грубо доход
-$piecesProfit = new Net_profit($nextSum->weight(), $nextSum->primary_sum());
-echo '<br>' . ' | Profit: ' . $profit->sum . '<br>';
+$piecesProfit = Net_profit::setInstance_1($buyPieces->summ());
+$piecesProfit = Net_profit::setInstance_2($buyPieces->primary_sum());
+$piecesProfit=Net_profit::finalSum();
+
+echo ' | Profit: ' .@$piecesProfit. '<br>';
 
 
 
