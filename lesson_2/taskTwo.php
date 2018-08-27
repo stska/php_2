@@ -272,7 +272,38 @@ $piecesProfit=Net_profit::finalSum();
 
 echo ' | Profit: ' .@$piecesProfit. '<br>';
 
+//Если же имелось ввиду синглтон на примере бд, тогда может быть так ->
+trait Singleton_ver2
+{
+    private static $instance;
+    private static $DB_HOST='127.0.0.1:3306';
+    private static $DB_NAME='shop';
+    private static $DB_USER='root';
+    private static $DB_PASS='';
 
+
+    final public static function getInstance()
+    {
+        return isset(static::$instance)
+            ? static::$instance
+            : static::$instance = new static;
+    }
+    final private function __construct() {
+        $this->instance= new PDO ('mysql:dbname='.self::DB_NAME.';host='.self::DB_HOST.self::DB_USER,self::DB_PASS,
+            [PDO::MYSQL_ATTR_INIT_COMMAND=>"SET NAMES 'utf8'"]);
+    }
+
+    final private function __wakeup() {}
+
+
+    final private function __clone() {}
+}
+
+class check_db
+    use Singleton_ver2;
+    //Что-то вставить еще, не придумал что)))))
+}
+$db=check_db::getInstance();
 
 
 
